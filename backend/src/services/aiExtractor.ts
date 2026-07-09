@@ -3,9 +3,15 @@ import { ParsedRow, CRMRecord, SkippedRecord } from '../types/index';
 import { createExtractionPrompt, validateExtractedRecord } from '../utils/prompts';
 import { API_TIMEOUT, RETRY_ATTEMPTS, RETRY_DELAY } from '../utils/constants';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+function getAnthropic() {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new Error('ANTHROPIC_API_KEY environment variable is not set');
+  }
+  return new Anthropic({
+    apiKey: apiKey,
+  });
+}
 
 export class AIExtractor {
   static async extractBatch(
@@ -14,10 +20,11 @@ export class AIExtractor {
     retryCount = 0
   ): Promise<{ extracted: CRMRecord[]; skipped: SkippedRecord[] }> {
     try {
+      const anthropic = getAnthropic();
       const prompt = createExtractionPrompt(headers, rows);
 
       const message = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-opus-4-1-20250805',
         max_tokens: 4096,
         messages: [
           {
